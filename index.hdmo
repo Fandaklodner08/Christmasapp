@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Santa</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #87CEEB;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB, #FFFFFF);
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #FF0000;
+            font-size: 32px;
+        }
+
+        .restart-btn {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .restart-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const GRAVITY = 0.5;
+        const SANTA_JUMP = -10;
+        const PIPE_SPEED = 3;
+        const PIPE_GAP = 200;
+
+        let santa = {
+            x: 50,
+            y: canvas.height / 2,
+            width: 50,
+            height: 50,
+            dy: 0
+        };
+
+        let pipes = [];
+        let score = 0;
+        let gameOver = false;
+
+        function drawSanta() {
+            ctx.fillStyle = "red";
+            ctx.fillRect(santa.x, santa.y, santa.width, santa.height);
+        }
+
+        function drawPipe(pipe) {
+            ctx.fillStyle = "green";
+            ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
+            ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, pipe.bottomHeight);
+        }
+
+        function drawScore() {
+            ctx.fillStyle = "black";
+            ctx.font = "24px Arial";
+            ctx.fillText(`Score: ${score}`, 10, 30);
+        }
+
+        function createPipe() {
+            const topHeight = Math.random() * (canvas.height / 2);
+            const bottomHeight = canvas.height - topHeight - PIPE_GAP;
+            const pipe = {
+                x: canvas.width,
+                width: 50,
+                topHeight,
+                bottomY: topHeight + PIPE_GAP,
+                bottomHeight
+            };
+            pipes.push(pipe);
+        }
+
+        function updatePipes() {
+            for (let i = 0; i < pipes.length; i++) {
+                const pipe = pipes[i];
+                pipe.x -= PIPE_SPEED;
+
+                if (pipe.x + pipe.width < 0) {
+                    pipes.splice(i, 1);
+                    score++;
+                    i--;
+                }
+            }
+
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 300) {
+                createPipe();
+            }
+        }
+
+        function checkCollision() {
+            if (santa.y + santa.height >= canvas.height || santa.y <= 0) {
+                gameOver = true;
+            }
+
+            for (const pipe of pipes) {
+                if (
+                    santa.x < pipe.x + pipe.width &&
+                    santa.x + santa.width > pipe.x &&
+                    (santa.y < pipe.topHeight || santa.y + santa.height > pipe.bottomY)
+                ) {
+                    gameOver = true;
+                }
+            }
+        }
+
+        function restartGame() {
+            santa.y = canvas.height / 2;
+            santa.dy = 0;
+            pipes = [];
+            score = 0;
+            gameOver = false;
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!gameOver) {
+                drawSanta();
+                santa.dy += GRAVITY;
+                santa.y += santa.dy;
+
+                updatePipes();
+                for (const pipe of pipes) {
+                    drawPipe(pipe);
+                }
+
+                checkCollision();
+                drawScore();
+            } else {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "white";
+                ctx.textAlign = "center";
+                ctx.font = "36px Arial";
+                ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 50);
+                ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2);
+                ctx.font = "24px Arial";
+                ctx.fillText("Press Space to Restart", canvas.width / 2, canvas.height / 2 + 50);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                if (gameOver) {
+                    restartGame();
+                } else {
+                    santa.dy = SANTA_JUMP;
+                }
+            }
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
