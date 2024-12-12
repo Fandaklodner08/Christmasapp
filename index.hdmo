@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Santa</title>
+    <title>Simple Christmas Game</title>
     <style>
         body {
             margin: 0;
@@ -26,19 +26,6 @@
             color: #FF0000;
             font-size: 32px;
         }
-
-        .restart-btn {
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .restart-btn:hover {
-            background-color: #218838;
-        }
     </style>
 </head>
 <body>
@@ -50,32 +37,22 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        const GRAVITY = 0.5;
-        const SANTA_JUMP = -10;
-        const PIPE_SPEED = 3;
-        const PIPE_GAP = 200;
-
+        const SANTA_SIZE = 50;
         let santa = {
-            x: 50,
+            x: 100,
             y: canvas.height / 2,
-            width: 50,
-            height: 50,
-            dy: 0
+            dy: 0,
+            color: "red"
         };
 
-        let pipes = [];
+        const GRAVITY = 0.3;
+        const JUMP = -7;
         let score = 0;
         let gameOver = false;
 
         function drawSanta() {
-            ctx.fillStyle = "red";
-            ctx.fillRect(santa.x, santa.y, santa.width, santa.height);
-        }
-
-        function drawPipe(pipe) {
-            ctx.fillStyle = "green";
-            ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
-            ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, pipe.bottomHeight);
+            ctx.fillStyle = santa.color;
+            ctx.fillRect(santa.x, santa.y, SANTA_SIZE, SANTA_SIZE);
         }
 
         function drawScore() {
@@ -84,56 +61,17 @@
             ctx.fillText(`Score: ${score}`, 10, 30);
         }
 
-        function createPipe() {
-            const topHeight = Math.random() * (canvas.height / 2);
-            const bottomHeight = canvas.height - topHeight - PIPE_GAP;
-            const pipe = {
-                x: canvas.width,
-                width: 50,
-                topHeight,
-                bottomY: topHeight + PIPE_GAP,
-                bottomHeight
-            };
-            pipes.push(pipe);
-        }
-
-        function updatePipes() {
-            for (let i = 0; i < pipes.length; i++) {
-                const pipe = pipes[i];
-                pipe.x -= PIPE_SPEED;
-
-                if (pipe.x + pipe.width < 0) {
-                    pipes.splice(i, 1);
-                    score++;
-                    i--;
-                }
-            }
-
-            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 300) {
-                createPipe();
-            }
-        }
-
-        function checkCollision() {
-            if (santa.y + santa.height >= canvas.height || santa.y <= 0) {
+        function updateSanta() {
+            santa.dy += GRAVITY;
+            santa.y += santa.dy;
+            if (santa.y + SANTA_SIZE > canvas.height || santa.y < 0) {
                 gameOver = true;
-            }
-
-            for (const pipe of pipes) {
-                if (
-                    santa.x < pipe.x + pipe.width &&
-                    santa.x + santa.width > pipe.x &&
-                    (santa.y < pipe.topHeight || santa.y + santa.height > pipe.bottomY)
-                ) {
-                    gameOver = true;
-                }
             }
         }
 
         function restartGame() {
             santa.y = canvas.height / 2;
             santa.dy = 0;
-            pipes = [];
             score = 0;
             gameOver = false;
         }
@@ -143,15 +81,8 @@
 
             if (!gameOver) {
                 drawSanta();
-                santa.dy += GRAVITY;
-                santa.y += santa.dy;
-
-                updatePipes();
-                for (const pipe of pipes) {
-                    drawPipe(pipe);
-                }
-
-                checkCollision();
+                updateSanta();
+                score++;
                 drawScore();
             } else {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
@@ -160,9 +91,8 @@
                 ctx.textAlign = "center";
                 ctx.font = "36px Arial";
                 ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 50);
-                ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2);
                 ctx.font = "24px Arial";
-                ctx.fillText("Press Space to Restart", canvas.width / 2, canvas.height / 2 + 50);
+                ctx.fillText("Press Space to Restart", canvas.width / 2, canvas.height / 2);
             }
 
             requestAnimationFrame(gameLoop);
@@ -173,7 +103,7 @@
                 if (gameOver) {
                     restartGame();
                 } else {
-                    santa.dy = SANTA_JUMP;
+                    santa.dy = JUMP;
                 }
             }
         });
